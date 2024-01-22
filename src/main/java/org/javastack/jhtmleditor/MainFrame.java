@@ -7,11 +7,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.awt.font.TextAttribute;
 import java.io.File;
 import java.io.FileInputStream;
@@ -465,7 +461,8 @@ public class MainFrame {
 
 	protected void mapKey(final JTextPane editor, final int keyCode, final String actionMapKey) {
 		final InputMap im = editor.getInputMap(JComponent.WHEN_FOCUSED);
-		final int mask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+		//TODO find correct java 8 version Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+		final int mask =  InputEvent.CTRL_DOWN_MASK;
 		im.put(KeyStroke.getKeyStroke(keyCode, mask), actionMapKey);
 	}
 
@@ -517,18 +514,14 @@ public class MainFrame {
 		chooser.setCurrentDirectory(new File("."));
 		chooser.setMultiSelectionEnabled(false);
 		chooser.setFileFilter(new FileNameExtensionFilter("HTML files", //
-				new String[] {
-						"html", "htm"
-				}));
+                "html", "htm"));
 		final int returnVal = chooser.showOpenDialog(null);
 		if (returnVal != JFileChooser.APPROVE_OPTION) {
 			return;
 		}
 		final File file = chooser.getSelectedFile();
 		try {
-			// final String text = sanitizeHTML(Files.readString(file.toPath()));
 			editor.setText("");
-			// kit.read(new StringReader(text), doc, 0);
 			kit.read(new FileReader(file), doc, 0);
 			afterLoad(editor);
 		} catch (BadLocationException | IOException e) {
@@ -621,15 +614,13 @@ public class MainFrame {
 			chooser.setCurrentDirectory(new File("."));
 			chooser.setMultiSelectionEnabled(false);
 			chooser.setFileFilter(new FileNameExtensionFilter("Image files", //
-					new String[] {
-							"png", "gif", "jpeg", "jpg", "jpe", "jfif"
-					}));
+                    "png", "gif", "jpeg", "jpg", "jpe", "jfif"));
 			final int returnVal = chooser.showOpenDialog(null);
 			if (returnVal != JFileChooser.APPROVE_OPTION) {
 				return;
 			}
 			final File file = chooser.getSelectedFile();
-			final SwingWorker<Void, Void> worker = new SwingWorker<>() {
+			final SwingWorker<Void,Void> worker = new SwingWorker<Void, Void>() {
 				private final AtomicReference<String> html = new AtomicReference<>();
 
 				@Override
@@ -672,7 +663,7 @@ public class MainFrame {
 			if (editor != null) {
 				final StyledEditorKit kit = getStyledEditorKit(editor);
 				final MutableAttributeSet attr = kit.getInputAttributes();
-				final boolean strike = (StyleConstants.isStrikeThrough(attr)) ? false : true;
+				final boolean strike = !StyleConstants.isStrikeThrough(attr);
 				final SimpleAttributeSet sas = new SimpleAttributeSet();
 				StyleConstants.setStrikeThrough(sas, strike);
 				setCharacterAttributes(editor, sas, false);
@@ -834,7 +825,7 @@ public class MainFrame {
 				int end = Math.min(getEndOffset(), elem.getEndOffset());
 				if (start < end) {
 					final String text = getDocument().getText(start, end - start);
-					final boolean isBlank = text.isBlank();
+					final boolean isBlank = text.chars().allMatch(Character::isWhitespace);
 					if (!isBlank) {
 						paragraphText++;
 					}
